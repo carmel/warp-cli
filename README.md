@@ -1,6 +1,6 @@
 # Third-party WARP client implemented in Go
 
-[中文文档](https://gitlab.com/ProjectWARP/warp-go/-/blob/master/README.zh_CN.md) | [English Document](https://gitlab.com/ProjectWARP/warp-go/-/blob/master/README.md)
+[中文文档](./README.zh_CN.md) | [English Document](./README.md)
 
 ~~Please give me a Star~~ :D
 
@@ -228,9 +228,3 @@ This part will not automatically generated during registration, It needs to be m
 - If you are willing to join the `ProjectWARP` project group, you can Email to `coiaprant@gmail.com` with your GitLab username, we will reply after reviewing your profile (if you have related information on other platforms Please include a link to the repository as well)
 
 - Contributing maintainer of this repository [@CoiaPrant](https://gitlab.com/CoiaPrant)
-
-_Translate by Google_ :D
-
-# Donate
-
-- USDT TRC20 Address `TNU2wK4yieGCWUxezgpZhwMHmLnRnXRtmu`
