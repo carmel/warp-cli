@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"golang.org/x/sys/windows"
 
@@ -81,8 +82,8 @@ func main() {
 	// wait for program to terminate
 
 	signal.Notify(term, os.Interrupt)
-	signal.Notify(term, os.Kill)
 	signal.Notify(term, windows.SIGTERM)
+	signal.Notify(term, syscall.SIGTERM)
 
 	select {
 	case <-term:

@@ -1,13 +1,14 @@
 package tun
 
 import (
-	"encoding/binary"
-	"fmt"
-	"math/rand"
-	"testing"
-
-	"golang.org/x/sys/unix"
+    "encoding/binary"
+    "fmt"
+    "math/rand"
+    "testing"
 )
+
+// IPPROTO_TCP is 6 for TCP protocol, define if not available from unix package
+const IPPROTO_TCP = 6
 
 func checksumRef(b []byte, initial uint16) uint16 {
 	ac := uint64(initial)
@@ -49,24 +50,24 @@ func TestChecksum(t *testing.T) {
 }
 
 func TestPseudoHeaderChecksum(t *testing.T) {
-	for _, addrLen := range []int{4, 16} {
-		for length := 0; length <= 9001; length++ {
-			srcAddr := make([]byte, addrLen)
-			dstAddr := make([]byte, addrLen)
-			buf := make([]byte, length)
-			rng := rand.New(rand.NewSource(1))
-			rng.Read(srcAddr)
-			rng.Read(dstAddr)
-			rng.Read(buf)
-			phSum := pseudoHeaderChecksumNoFold(unix.IPPROTO_TCP, srcAddr, dstAddr, uint16(length))
-			csum := checksum(buf, phSum)
-			phSumRef := pseudoHeaderChecksumRefNoFold(unix.IPPROTO_TCP, srcAddr, dstAddr, uint16(length))
-			csumRef := checksumRef(buf, phSumRef)
-			if csum != csumRef {
-				t.Error("Expected checksumRef", csumRef, "got", csum)
-			}
-		}
-	}
+       for _, addrLen := range []int{4, 16} {
+	       for length := 0; length <= 9001; length++ {
+		       srcAddr := make([]byte, addrLen)
+		       dstAddr := make([]byte, addrLen)
+		       buf := make([]byte, length)
+		       rng := rand.New(rand.NewSource(1))
+		       rng.Read(srcAddr)
+		       rng.Read(dstAddr)
+		       rng.Read(buf)
+		       phSum := pseudoHeaderChecksumNoFold(IPPROTO_TCP, srcAddr, dstAddr, uint16(length))
+		       csum := checksum(buf, phSum)
+		       phSumRef := pseudoHeaderChecksumRefNoFold(IPPROTO_TCP, srcAddr, dstAddr, uint16(length))
+		       csumRef := checksumRef(buf, phSumRef)
+		       if csum != csumRef {
+			       t.Error("Expected checksumRef", csumRef, "got", csum)
+		       }
+	       }
+       }
 }
 
 func BenchmarkChecksum(b *testing.B) {

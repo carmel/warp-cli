@@ -1,230 +1,120 @@
-# Third-party WARP client implemented in Go
+# warp-cli
 
-[中文文档](./README.zh_CN.md) | [English Document](./README.md)
+> warp-cli is an unofficial, cross-platform CLI for [Cloudflare Warp](https://1.1.1.1/)
 
-~~Please give me a Star~~ :D
+![](https://img.shields.io/drone/build/ViRb3/wgcf)
+![](https://img.shields.io/github/issues/ViRb3/wgcf)
+![](https://img.shields.io/github/downloads/ViRb3/wgcf/total)
+![](https://img.shields.io/github/languages/code-size/ViRb3/wgcf)
 
-## Command line arguments
+## Features
 
-Configuration file
+- Register new account
+- Change license key to use existing Warp+ subscription
+- Generate WireGuard profile
+- Check account status
+- Print trace information to debug Warp/Warp+ status
 
-The default value is `warp.conf`
+## Build
 
-```
---config <config file name>
-```
-
-Register for WARP
-
-The configuration file is saved to `warp.conf` by default, and the location can be modified by the `--config` parameter
-
-```
---register
-```
-
-Register WARP and customize device name
-
-```
---register --device-name <Device Name>
+```sh
+go build -ldflags="-w -s" -trimpath -o warp-cli .
 ```
 
-Sign up for WARP Team
+## Download
 
-Team configuration files need to be obtained using a special method
-
-Please visit [Warp Team Api](https://web--public--warp-team-api--coia-mfs4.code.run) to get `Token` as `Team Config`
-
-```
---register --team-config <WARP Team Config>
-```
-
-Register for WARP and upgrade to WARP+
-
-```
---register --license <WARP+ license>
-```
-
-Upgrade to WARP+
-
-The default loading configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-```
---update --license <WARP+ license>
-```
-
-Change device name
-
-The default loading configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-```
---update --device-name <Device Name>
-```
-
-Upgrade to WARP+ and change device name
-
-The default loading configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-```
---update --license <WARP+ license> --device-name <Device Name>
-```
-
-Reset Private Key
-
-The default loaded configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-```
-
---update --reset-key
-
-```
-
-Remove the WARP device and delete the configuration file
-
-The default loading configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-```
---remove
-```
-
-Running in the foreground
-
-_Linux/Darwin/FreeBSD starts as a daemon by default, that is, a background process_
-
-```
---foreground
-```
-
-Generate `WireGuard` configuration file
-
-The default loading configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-WARNING: Do not use `--remove` to uninstall after build, and save your `warp-go` and `WireGuard` configuration files
-
-```
---export-wireguard <File Name>
-```
-
-Generate `Sing-Box` Socks configuration file
-
-The default loaded configuration file is `warp.conf`, which can be modified by the `--config` parameter
-
-Note: Do not use `--remove` to uninstall after the build is complete, and save your `warp-go` and `Sing-Box` configuration files
-
-> Socks listening address is 127.0.0.1:2000
-
-```
---export-singbox <File Name>
-```
-
-Print help guide
-
-```
--h
-```
-
-Print version and copyright
-
-```
--v
-```
+You can find pre-compiled binaries on the [releases page](https://github.com/carmel/warp-cli/releases).
 
 ## Usage
 
-1. Register with the WARP server first. If you have WARP+ License, you can bring the `--license` parameter
+Run `warp-cli` in a terminal without any arguments to display the help screen. All commands and parameters are documented.
 
-```
-warp-go --register
-```
+### Register new account
 
-2. Start Warp-Go
+Run the following command in a terminal:
 
-```
-warp-go --foreground
+```bash
+warp-cli register
 ```
 
-## Tips
+The new account will be saved under `warp-cli-account.toml`
 
-- OpenVZ, LXC, Docker container please open Tun permission
-- When running as Daemon, use `kill -15 <PID>` to close the program first (simulate Ctrl+C to close the program normally)
-- It is recommended to start this program as a systemd service
+### Generate WireGuard profile
 
-## Configuration file
+Run the following command in a terminal:
 
-The configuration file uses the ini format, which is slightly different from the WireGuard configuration file
-
-- Account section
-
-This part will be automatically generated during registration, please do not modify it
-
-```
-[Account]
-Device     = <Device ID>
-PrivateKey = <WireGuard Private Key>
-Token      = <Cloudflare API Token>
-Type       = <free / plus / team>
+```bash
+warp-cli generate
 ```
 
-- Device section
+The WireGuard profile will be saved under `warp-cli-profile.conf`. For more information on how to use it, please check the official [WireGuard Quick Start](https://www.wireguard.com/quickstart/).
 
-This section is automatically generated when you sign up
+#### Maximum transmission unit (MTU)
 
-`Name` TUN device name, default value is `WARP`
-`MTU` TUN device MTU, default value is `1280`
+To ensure maximum compatibility, the generated profile will have a MTU of 1280, just like the official Android app. If you are experiencing performance issues, you may be able to improve your speed by increasing this value. For more information, please check [#40](https://github.com/carmel/warp-cli/issues/40).
 
-```
-[Device]
-Name = WARP
-MTU=1280
-```
+### Add a license key
 
-- Peer section
+If you have an existing Warp+ subscription, for example on your phone, you can bind the account generated by this tool to your phone's account, sharing its Warp+ status. Please note that there is a limit of 5 maximum devices linked at a time. You can remove linked devices from the 1.1.1.1 app on your phone.
 
-This section is automatically generated when you register
+> [!CAUTION]
+> Only subscriptions purchased directly from the official 1.1.1.1 app are supported. Keys obtained by any other means, including referrals, will not work and will not be supported.
 
-`PublicKey` field will not be used, for informational purposes only
+First, get your Warp+ account license key. To view it on Android:
 
-`Endpoint` field only accepts the format `IP:Port`. Domain names are not supported
+1. Open the `1.1.1.1` app
+2. Click on the hamburger menu button in the top-right corner
+3. Navigate to: `Account` > `Key`
 
-`Endpoint6` field will not be used, for informational purposes only
+Now, back to warp-cli.
 
-`KeepAlive` field is the `PersistentKeepalive` field of WireGuard, used to keep the UDP session active after NAT
+> [!WARNING]
+> There's a bug on Cloudflare's side that prevents existing accounts from getting Warp+ even after you bind a correct license key. If you have ever connected to Warp VPN, then your account is affected. You will need to make a new account via:
+>
+> ```warp-cli register
+> warp-cli register
+> ```
+>
+> Then immediately proceed with the steps below, without running any other commands. For more details, check [!85](https://github.com/carmel/warp-cli/issues/85)
 
-`AllowedIPs` field is used to automatically add the routing table after the connection is successful. The default generated configuration does not have this option. You can automatically add the routing table with the PostUp script, or you can use this field
+Run the following commands:
 
-_Not filling in the `AllowedIPs` field is equivalent to `Table=off`_
-
-```
-[Peer]
-PublicKey = <Warp Endpoint Public Key>
-Endpoint  = <Warp Endpoint>
-Endpoint6 = <Warp Endpoint V6>
-KeepAlive = 30
-
-#AllowedIPs = 0.0.0.0/0, ::/0
+```bash
+warp-cli update --license-key "YOUR_LICENSE_KEY_GOES_HERE"
+warp-cli generate
 ```
 
-- Script section
+### Check device status
 
-This part will not automatically generated during registration, It needs to be manually appended to the configuration file, It is same as the `WireGuard` configuration file
+Run the following command in a terminal:
 
-`PreUp` field is used to initialize the command line previously executed by `WireGuard-Go`
-
-`PostUp` field is used to execute the command line after the connection is successful
-
-`PostDown` field is used for the command line executed before the program exits
-
-```
-[Script]
-#PreUp = <Command>
-#PostUP = <Command>
-#PostDown = <Command>
+```bash
+warp-cli status
 ```
 
-## Copyright
+### Verify Warp/Warp+ works
 
-- Cloudflare and the `ProjectWARP` project team have the final interpretation right of this project
-- By using this project, you agree to the Cloudflare WARP User Agreement and assume all responsibilities and consequences for illegal use
-- This project is open source based on the `MIT` protocol. To avoid DMCA and abuse, this repository does not store any source code related to obtaining the `Reserved` field
-- If you are willing to join the `ProjectWARP` project group, you can Email to `coiaprant@gmail.com` with your GitLab username, we will reply after reviewing your profile (if you have related information on other platforms Please include a link to the repository as well)
+Connect to the WireGuard profile [generated](#generate-wireguard-profile) by this tool, then run:
 
-- Contributing maintainer of this repository [@CoiaPrant](https://gitlab.com/CoiaPrant)
+```bash
+warp-cli trace
+```
+
+If you look at the last line, it should say `warp=on` or `warp=plus`, depending on whether you have Warp or Warp+ respectively.
+
+> [!WARNING]
+> If you're seeing `warp=on` even after you bound a Warp+ license key, you are likely experiencing a known bug, please refer to the [Add a license key](#add-a-license-key) section.
+
+## Development
+
+The API client code is auto-generated from the OpenAPI spec [openapi-spec.yml](openapi-spec.yml) and stored under the [openapi/](openapi/) package. Do not touch any code under that package, instead, change the spec file and regenerate the API client code. To do this, [install openapi-generator](https://openapi-generator.tech/docs/installation), then run:
+
+```bash
+go generate
+```
+
+## Notice of Non-Affiliation and Disclaimer
+
+We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with Cloudflare, or any of its subsidiaries or its affiliates. The official Cloudflare website can be found at https://www.cloudflare.com/.
+
+The names Cloudflare Warp and Cloudflare as well as related names, marks, emblems and images are registered trademarks of their respective owners.
