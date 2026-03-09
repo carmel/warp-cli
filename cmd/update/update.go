@@ -1,13 +1,14 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"slices"
 
 	"github.com/carmel/warp-cli/cloudflare"
-	. "github.com/carmel/warp-cli/cmd/shared"
 	"github.com/carmel/warp-cli/config"
+	"github.com/carmel/warp-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,11 +24,11 @@ var shortMsg = "Updates the current Cloudflare Warp account, preparing it for co
 var Cmd = &cobra.Command{
 	Use:   "update",
 	Short: shortMsg,
-	Long: FormatMessage(shortMsg, `
+	Long: util.FormatMessage(shortMsg, `
 If a new/different license key is provided, the current device will be bound to the new key and its parent account. 
 Please note that there is a maximum limit of 5 active devices linked to the same account at a given time.`),
 	Run: func(cmd *cobra.Command, args []string) {
-		RunCommandFatal(updateAccount)
+		util.RunCommandFatal(updateAccount)
 	},
 }
 
@@ -40,38 +41,39 @@ func init() {
 }
 
 func updateAccount() error {
-	if err := EnsureConfigValidAccount(); err != nil {
-		return fmt.Errorf("EnsureConfigValidAccount: %s", err)
+
+	if !config.IsAccountValid() {
+		return errors.New("no valid account found.")
 	}
 
-	ctx := CreateContext()
+	ctx := config.CreateContext()
 	if licenseKey != "" {
 		ctx.LicenseKey = licenseKey
 	}
 
 	account, err := cloudflare.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAccount: %s", err)
+		return fmt.Errorf("GetAccount: %v", err)
 	}
 	if account.License != ctx.LicenseKey {
 		log.Println("Updated license key detected, re-binding device to new account")
 		if _, err := cloudflare.UpdateLicenseKey(ctx); err != nil {
-			return fmt.Errorf("UpdateLicenseKey: %s", err)
+			return fmt.Errorf("UpdateLicenseKey: %v", err)
 		}
 		viper.Set(config.LicenseKey, ctx.LicenseKey)
 		if err := viper.WriteConfig(); err != nil {
-			return fmt.Errorf("WriteConfig: %s", err)
+			return fmt.Errorf("WriteConfig: %v", err)
 		}
 	}
 
 	boundDevice, err := cloudflare.GetSourceBoundDevice(ctx)
 	if err != nil {
-		return fmt.Errorf("GetSourceBoundDevice: %s", err)
+		return fmt.Errorf("GetSourceBoundDevice: %v", err)
 	}
 	if boundDevice.Name == nil || (deviceName != "" && deviceName != *boundDevice.Name) {
 		log.Println("Setting device name")
-		if _, err := SetDeviceName(ctx, deviceName); err != nil {
-			return fmt.Errorf("SetDeviceName: %s", err)
+		if _, err := cloudflare.SetDeviceName(ctx, deviceName); err != nil {
+			return fmt.Errorf("SetDeviceName: %v", err)
 		}
 	}
 
@@ -80,29 +82,29 @@ func updateAccount() error {
 		deviceActions[deviceId] = func() error {
 			log.Printf("Deleting device: %s\n", deviceId)
 			err := cloudflare.DeleteBoundDevice(ctx, deviceId)
-			return fmt.Errorf("DeleteBoundDevice: %s", err)
+			return fmt.Errorf("DeleteBoundDevice: %v", err)
 		}
 	}
 	for _, deviceId := range deactivateDevices {
 		deviceActions[deviceId] = func() error {
 			log.Printf("Deactivating device: %s\n", deviceId)
 			if _, err := cloudflare.UpdateSourceBoundDeviceActive(ctx, deviceId, false); err != nil {
-				return fmt.Errorf("UpdateSourceBoundDeviceActive: %s", err)
+				return fmt.Errorf("UpdateSourceBoundDeviceActive: %v", err)
 			}
-			return fmt.Errorf("Deactivating: %s", err)
+			return fmt.Errorf("Deactivating: %v", err)
 		}
 	}
 	for _, deviceId := range activateDevices {
 		deviceActions[deviceId] = func() error {
 			log.Printf("Activating device: %s\n", deviceId)
 			_, err := cloudflare.UpdateSourceBoundDeviceActive(ctx, deviceId, true)
-			return fmt.Errorf("UpdateSourceBoundDeviceActive: %s", err)
+			return fmt.Errorf("UpdateSourceBoundDeviceActive: %v", err)
 		}
 	}
 
 	boundDevices, err := cloudflare.GetBoundDevices(ctx)
 	if err != nil {
-		return fmt.Errorf("GetBoundDevices: %s", err)
+		return fmt.Errorf("GetBoundDevices: %v", err)
 	}
 
 	for deviceId, action := range deviceActions {
@@ -113,21 +115,21 @@ func updateAccount() error {
 			return fmt.Errorf("device not found: %s", deviceId)
 		}
 		if err := action(); err != nil {
-			return fmt.Errorf("action: %s", err)
+			return fmt.Errorf("action: %v", err)
 		}
 	}
 
 	// refresh in case e.g. account type changed
 	account, err = cloudflare.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAccount: %s", err)
+		return fmt.Errorf("GetAccount: %v", err)
 	}
 	boundDevices, err = cloudflare.GetBoundDevices(ctx)
 	if err != nil {
-		return fmt.Errorf("GetBoundDevices: %s", err)
+		return fmt.Errorf("GetBoundDevices: %v", err)
 	}
 
-	PrintAccountDetails(account, boundDevices)
+	cloudflare.PrintAccountDetails(account, boundDevices)
 
 	log.Println("Successfully updated Cloudflare Warp account")
 	return nil

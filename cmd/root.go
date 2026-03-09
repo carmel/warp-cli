@@ -6,11 +6,11 @@ import (
 
 	"github.com/carmel/warp-cli/cmd/generate"
 	"github.com/carmel/warp-cli/cmd/register"
-	. "github.com/carmel/warp-cli/cmd/shared"
 	"github.com/carmel/warp-cli/cmd/status"
 	"github.com/carmel/warp-cli/cmd/trace"
 	"github.com/carmel/warp-cli/cmd/update"
 	"github.com/carmel/warp-cli/config"
+	"github.com/carmel/warp-cli/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,7 +20,7 @@ var cfgFile string
 var RootCmd = &cobra.Command{
 	Use:   "warp-cli",
 	Short: "WireGuard Cloudflare Warp utility",
-	Long: FormatMessage("", `
+	Long: util.FormatMessage("", `
 warp-cli is a utility for Cloudflare Warp that allows you to create and
 manage accounts, assign license keys, and generate WireGuard profiles.
 Project website: https://github.com/carmel/warp-cli`),

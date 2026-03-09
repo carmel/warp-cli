@@ -1,13 +1,14 @@
 package register
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
-	"github.com/carmel/warp-cli/cloudflare"
-	. "github.com/carmel/warp-cli/cmd/shared"
-	"github.com/carmel/warp-cli/config"
 	"github.com/carmel/warp-cli/util"
+
+	"github.com/carmel/warp-cli/cloudflare"
+	"github.com/carmel/warp-cli/config"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,9 +23,9 @@ var shortMsg = "Registers a new Cloudflare Warp device and creates a new account
 var Cmd = &cobra.Command{
 	Use:   "register",
 	Short: shortMsg,
-	Long:  FormatMessage(shortMsg, ``),
+	Long:  util.FormatMessage(shortMsg, ``),
 	Run: func(cmd *cobra.Command, args []string) {
-		RunCommandFatal(registerAccount)
+		util.RunCommandFatal(registerAccount)
 	},
 }
 
@@ -36,12 +37,13 @@ func init() {
 }
 
 func registerAccount() error {
-	if err := EnsureNoExistingAccount(); err != nil {
-		return fmt.Errorf("EnsureNoExistingAccount :%s", err)
+
+	if config.IsAccountValid() {
+		return errors.New("a valid account is already exists.")
 	}
 
 	if err := checkTOS(); err != nil {
-		return fmt.Errorf("checkTOS :%s", err)
+		return fmt.Errorf("checkTOS: %v", err)
 	}
 
 	var privateKey *util.Key
@@ -53,12 +55,12 @@ func registerAccount() error {
 		privateKey, err = util.NewPrivateKey()
 	}
 	if err != nil {
-		return fmt.Errorf("NewKey :%s", err)
+		return fmt.Errorf("NewKey: %v", err)
 	}
 
 	device, err := cloudflare.Register(privateKey.Public(), deviceModel)
 	if err != nil {
-		return fmt.Errorf("Register :%s", err)
+		return fmt.Errorf("Register: %v", err)
 	}
 
 	viper.Set(config.PrivateKey, privateKey.String())
@@ -66,24 +68,24 @@ func registerAccount() error {
 	viper.Set(config.AccessToken, device.Token)
 	viper.Set(config.LicenseKey, device.Account.License)
 	if err := viper.WriteConfig(); err != nil {
-		return fmt.Errorf("WriteConfig :%s", err)
+		return fmt.Errorf("WriteConfig: %v", err)
 	}
 
-	ctx := CreateContext()
-	if _, err := SetDeviceName(ctx, deviceName); err != nil {
-		return fmt.Errorf("SetDeviceName :%s", err)
+	ctx := config.CreateContext()
+	if _, err := cloudflare.SetDeviceName(ctx, deviceName); err != nil {
+		return fmt.Errorf("SetDeviceName: %v", err)
 	}
 
 	account, err := cloudflare.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAccount :%s", err)
+		return fmt.Errorf("GetAccount: %v", err)
 	}
 	boundDevices, err := cloudflare.GetBoundDevices(ctx)
 	if err != nil {
-		return fmt.Errorf("GetBoundDevices :%s", err)
+		return fmt.Errorf("GetBoundDevices: %v", err)
 	}
 
-	PrintAccountDetails(account, boundDevices)
+	cloudflare.PrintAccountDetails(account, boundDevices)
 	log.Println("Successfully created Cloudflare Warp account")
 	return nil
 }
@@ -97,9 +99,9 @@ func checkTOS() error {
 			Items: []string{"Yes", "No"},
 		}
 		if _, result, err := prompt.Run(); err != nil {
-			return fmt.Errorf("prompt run :%s", err)
+			return fmt.Errorf("prompt run: %v", err)
 		} else if result != "Yes" {
-			return ErrTOSNotAccepted
+			return util.ErrTOSNotAccepted
 		}
 	}
 	return nil

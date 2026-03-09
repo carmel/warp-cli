@@ -25,9 +25,12 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/manifoldco/promptui v0.9.0
+	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
+	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sys v0.41.0
+	golang.org/x/term v0.40.0
 	gvisor.dev/gvisor v0.0.0-20250503011706-39ed1f5ac29c
 )

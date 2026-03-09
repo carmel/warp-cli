@@ -1,10 +1,12 @@
 package status
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/carmel/warp-cli/cloudflare"
-	. "github.com/carmel/warp-cli/cmd/shared"
+	"github.com/carmel/warp-cli/config"
+	"github.com/carmel/warp-cli/util"
 	"github.com/spf13/cobra"
 )
 
@@ -13,9 +15,9 @@ var shortMsg = "Prints the status of the current Cloudflare Warp device"
 var Cmd = &cobra.Command{
 	Use:   "status",
 	Short: shortMsg,
-	Long:  FormatMessage(shortMsg, ``),
+	Long:  util.FormatMessage(shortMsg, ``),
 	Run: func(cmd *cobra.Command, args []string) {
-		RunCommandFatal(status)
+		util.RunCommandFatal(status)
 	},
 }
 
@@ -23,21 +25,22 @@ func init() {
 }
 
 func status() error {
-	if err := EnsureConfigValidAccount(); err != nil {
-		return fmt.Errorf("EnsureConfigValidAccount: %s", err)
+
+	if !config.IsAccountValid() {
+		return errors.New("no valid account found.")
 	}
 
-	ctx := CreateContext()
+	ctx := config.CreateContext()
 
 	account, err := cloudflare.GetAccount(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAccount: %s", err)
+		return fmt.Errorf("GetAccount: %v", err)
 	}
 	boundDevices, err := cloudflare.GetBoundDevices(ctx)
 	if err != nil {
-		return fmt.Errorf("GetBoundDevices: %s", err)
+		return fmt.Errorf("GetBoundDevices: %v", err)
 	}
 
-	PrintAccountDetails(account, boundDevices)
+	cloudflare.PrintAccountDetails(account, boundDevices)
 	return nil
 }

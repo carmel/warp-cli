@@ -33,7 +33,7 @@ type ProfileData struct {
 func NewProfile(data *ProfileData) (*Profile, error) {
 	profileString, err := generateProfile(data)
 	if err != nil {
-		return nil, fmt.Errorf("generate profile: %s", err)
+		return nil, fmt.Errorf("generate profile: %v", err)
 	}
 	return &Profile{profileString: profileString}, nil
 }
@@ -41,11 +41,11 @@ func NewProfile(data *ProfileData) (*Profile, error) {
 func generateProfile(data *ProfileData) (string, error) {
 	t, err := template.New("").Parse(profileTemplate)
 	if err != nil {
-		return "", fmt.Errorf("template new: %s", err)
+		return "", fmt.Errorf("template new: %v", err)
 	}
 	var result bytes.Buffer
 	if err := t.Execute(&result, data); err != nil {
-		return "", fmt.Errorf("template execute: %s", err)
+		return "", fmt.Errorf("template execute: %v", err)
 	}
 	return result.String(), nil
 }

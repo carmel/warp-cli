@@ -1,0 +1,126 @@
+package scan
+
+import (
+	"net"
+	"testing"
+	"time"
+
+	"github.com/carmel/warp-cli/util"
+)
+
+func TestDebugConnection(t *testing.T) {
+	// 测试单个 IP 的连接
+	testIPs := []string{
+		"162.159.192.1:500",
+		"162.159.193.1:854",
+		"188.114.96.1:2408",
+		"162.159.192.1:4500",
+	}
+
+	util.InitHandshakePacket()
+
+	for _, addr := range testIPs {
+		t.Logf("Testing %s...", addr)
+
+		// 尝试连接
+		conn, err := net.DialTimeout("udp", addr, 2*time.Second)
+		if err != nil {
+			t.Logf("  ❌ Connection failed: %v", err)
+			continue
+		}
+		defer conn.Close()
+
+		t.Logf("  ✓ Connection established")
+
+		// 尝试握手
+		success, rtt := testHandshake(conn)
+		if success {
+			t.Logf("  ✓ Handshake successful! RTT: %v", rtt)
+		} else {
+			t.Logf("  ❌ Handshake failed")
+		}
+	}
+}
+
+func testHandshake(conn net.Conn) (bool, time.Duration) {
+	// 使用默认的握手包
+	handshakePacket := []byte{
+		0x01, 0x3c, 0xbd, 0xaf, 0xb4, 0x13, 0x5c, 0xac,
+		0x96, 0xa2, 0x94, 0x84, 0xd7, 0xa0, 0x17, 0x5a,
+		0xb1, 0x52, 0xdd, 0x3e, 0x59, 0xbe, 0x35, 0x04,
+		0x9b, 0xea, 0xdf, 0x75, 0x8b, 0x8d, 0x48, 0xaf,
+		0x14, 0xca, 0x65, 0xf2, 0x5a, 0x16, 0x89, 0x34,
+		0x74, 0x6f, 0xe8, 0xbc, 0x88, 0x67, 0xb1, 0xc1,
+		0x71, 0x13, 0xd7, 0x1c, 0x0f, 0xac, 0x5c, 0x14,
+		0x1e, 0xf9, 0xf3, 0x57, 0x83, 0xff, 0xa5, 0x35,
+		0x7c, 0x98, 0x71, 0xf4, 0xa0, 0x06, 0x66, 0x2b,
+		0x83, 0xad, 0x71, 0x24, 0x5a, 0x86, 0x24, 0x95,
+		0x37, 0x6a, 0x5f, 0xe3, 0xb4, 0xf2, 0xe1, 0xf0,
+		0x69, 0x74, 0xd7, 0x48, 0x41, 0x66, 0x70, 0xe5,
+		0xf9, 0xb0, 0x86, 0x29, 0x7f, 0x65, 0x2e, 0x6d,
+		0xfb, 0xf7, 0x42, 0xfb, 0xfc, 0x63, 0xc3, 0xd8,
+		0xae, 0xb1, 0x75, 0xa3, 0xe9, 0xb7, 0x58, 0x2f,
+		0xbc, 0x67, 0xc7, 0x75, 0x77, 0xe4, 0xc0, 0xb3,
+		0x2b, 0x05, 0xf9, 0x29, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	}
+
+	startTime := time.Now()
+
+	// 发送握手包
+	_, err := conn.Write(handshakePacket)
+	if err != nil {
+		return false, 0
+	}
+
+	// 设置读取超时
+	conn.SetDeadline(time.Now().Add(2 * time.Second))
+
+	// 读取响应
+	revBuff := make([]byte, 1024)
+	n, err := conn.Read(revBuff)
+	if err != nil {
+		return false, 0
+	}
+
+	duration := time.Since(startTime)
+
+	// WireGuard 握手响应应该是 92 字节
+	if n != 92 {
+		return false, 0
+	}
+
+	return true, duration
+}
+
+func TestScanWithDebug(t *testing.T) {
+	// 设置更宽松的参数
+	util.Routines = 10
+	util.PingTimes = 3
+	util.MaxScanCount = 50
+	util.PrintNum = 5
+	util.Output = "debug_result.csv"
+
+	t.Log("Starting debug scan...")
+
+	// 初始化握手包
+	util.InitHandshakePacket()
+
+	// 运行扫描 - 只调用一次 Run()
+	warping := util.NewWarping()
+	pingData := warping.Run().FilterDelay().FilterLossRate()
+
+	t.Logf("Found %d available IPs", len(pingData))
+
+	if len(pingData) > 0 {
+		util.ExportCsv(pingData)
+		pingData.Print()
+	} else {
+		t.Log("No available IPs found. Possible reasons:")
+		t.Log("1. Network firewall blocking UDP connections")
+		t.Log("2. ISP blocking Cloudflare Warp ports")
+		t.Log("3. Warp service using different endpoints")
+		t.Log("4. Need custom private key/reserved field")
+	}
+}

@@ -70,7 +70,7 @@ func Register(publicKey *util.Key, deviceModel string) (*openapi.Register200Resp
 			Tos:       timestamp,
 			Type:      "Android",
 		}).Execute()
-	return result, fmt.Errorf("Register: %s", err)
+	return result, err
 }
 
 type SourceDevice openapi.GetSourceDevice200Response
@@ -79,7 +79,7 @@ func GetSourceDevice(ctx *config.Context) (*SourceDevice, error) {
 	result, _, err := globalClientAuth(ctx.AccessToken).DefaultAPI.
 		GetSourceDevice(context.TODO(), ApiVersion, ctx.DeviceId).
 		Execute()
-	return (*SourceDevice)(result), fmt.Errorf("GetSourceDevice: %s", err)
+	return (*SourceDevice)(result), err
 }
 
 func globalClientAuth(authToken string) *openapi.APIClient {
@@ -96,7 +96,7 @@ func GetAccount(ctx *config.Context) (*Account, error) {
 		GetAccount(context.TODO(), ctx.DeviceId, ApiVersion).
 		Execute()
 	castResult := (*Account)(result)
-	return castResult, fmt.Errorf("GetAccount: %s", err)
+	return castResult, err
 }
 
 func UpdateLicenseKey(ctx *config.Context) (*openapi.UpdateAccount200Response, error) {
@@ -105,7 +105,7 @@ func UpdateLicenseKey(ctx *config.Context) (*openapi.UpdateAccount200Response, e
 		UpdateAccountRequest(openapi.UpdateAccountRequest{License: ctx.LicenseKey}).
 		Execute()
 	if err != nil {
-		return nil, fmt.Errorf("UpdateLicenseKey: %s", err)
+		return nil, fmt.Errorf("UpdateLicenseKey: %v", err)
 	}
 
 	return result, nil
@@ -118,7 +118,7 @@ func GetBoundDevices(ctx *config.Context) ([]BoundDevice, error) {
 		GetBoundDevices(context.TODO(), ctx.DeviceId, ApiVersion).
 		Execute()
 	if err != nil {
-		return nil, fmt.Errorf("GetBoundDevices: %s", err)
+		return nil, fmt.Errorf("GetBoundDevices: %v", err)
 	}
 	var castResult []BoundDevice
 	for _, device := range result {
@@ -130,7 +130,7 @@ func GetBoundDevices(ctx *config.Context) ([]BoundDevice, error) {
 func GetSourceBoundDevice(ctx *config.Context) (*BoundDevice, error) {
 	result, err := GetBoundDevices(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetSourceBoundDevice: %s", err)
+		return nil, fmt.Errorf("GetSourceBoundDevice: %v", err)
 	}
 	return FindDevice(result, ctx.DeviceId)
 }
@@ -153,7 +153,7 @@ func updateSourceBoundDevice(ctx *config.Context, targetDeviceId string, data op
 		UpdateBoundDeviceRequest(data).
 		Execute()
 	if err != nil {
-		return nil, fmt.Errorf("updateSourceBoundDevice: %s", err)
+		return nil, fmt.Errorf("updateSourceBoundDevice: %v", err)
 	}
 	var castResult []BoundDevice
 	for _, device := range result {

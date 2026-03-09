@@ -1,11 +1,11 @@
 package generate
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/carmel/warp-cli/cloudflare"
-	. "github.com/carmel/warp-cli/cmd/shared"
 	"github.com/carmel/warp-cli/config"
 	"github.com/carmel/warp-cli/util"
 	"github.com/spf13/cobra"
@@ -18,9 +18,9 @@ var shortMsg = "Generates a WireGuard profile from the current Cloudflare Warp a
 var Cmd = &cobra.Command{
 	Use:   "generate",
 	Short: shortMsg,
-	Long:  FormatMessage(shortMsg, ``),
+	Long:  util.FormatMessage(shortMsg, ``),
 	Run: func(cmd *cobra.Command, args []string) {
-		RunCommandFatal(generateProfile)
+		util.RunCommandFatal(generateProfile)
 	},
 }
 
@@ -29,14 +29,15 @@ func init() {
 }
 
 func generateProfile() error {
-	if err := EnsureConfigValidAccount(); err != nil {
-		return fmt.Errorf("EnsureConfigValidAccount :%s", err)
+
+	if !config.IsAccountValid() {
+		return errors.New("no valid account found.")
 	}
 
-	ctx := CreateContext()
+	ctx := config.CreateContext()
 	thisDevice, err := cloudflare.GetSourceDevice(ctx)
 	if err != nil {
-		return fmt.Errorf("GetSourceDevice :%s", err)
+		return fmt.Errorf("GetSourceDevice: %v", err)
 	}
 
 	profile, err := util.NewProfile(&util.ProfileData{
@@ -47,10 +48,10 @@ func generateProfile() error {
 		Endpoint:   thisDevice.Config.Peers[0].Endpoint.Host,
 	})
 	if err != nil {
-		return fmt.Errorf(" :%s", err)
+		return fmt.Errorf(": %v", err)
 	}
 	if err := profile.Save(profileFile); err != nil {
-		return fmt.Errorf("profile save :%s", err)
+		return fmt.Errorf("profile save: %v", err)
 	}
 
 	log.Println("Successfully generated WireGuard profile:", profileFile)
