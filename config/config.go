@@ -9,6 +9,8 @@ const (
 	AccessToken = "access_token"
 	PrivateKey  = "private_key"
 	LicenseKey  = "license_key"
+	Mode        = "mode"      // "consumer" or "team"
+	TeamName    = "team_name" // Zero Trust team name
 )
 
 type Context struct {

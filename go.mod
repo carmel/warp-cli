@@ -1,6 +1,6 @@
 module github.com/carmel/warp-cli
 
-go 1.25.8
+go 1.26.1
 
 require golang.org/x/net v0.51.0
 

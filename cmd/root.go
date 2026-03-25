@@ -4,8 +4,13 @@ import (
 	"errors"
 	"log"
 
+	"github.com/carmel/warp-cli/cmd/connect"
+	"github.com/carmel/warp-cli/cmd/connect_custom"
+	"github.com/carmel/warp-cli/cmd/disconnect"
 	"github.com/carmel/warp-cli/cmd/generate"
+	"github.com/carmel/warp-cli/cmd/generate_config"
 	"github.com/carmel/warp-cli/cmd/register"
+	"github.com/carmel/warp-cli/cmd/register_team"
 	"github.com/carmel/warp-cli/cmd/status"
 	"github.com/carmel/warp-cli/cmd/trace"
 	"github.com/carmel/warp-cli/cmd/update"
@@ -39,8 +44,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "warp-cli-account.toml", "Configuration file")
 	RootCmd.AddCommand(register.Cmd)
+	RootCmd.AddCommand(register_team.Cmd)
 	RootCmd.AddCommand(update.Cmd)
 	RootCmd.AddCommand(generate.Cmd)
+	RootCmd.AddCommand(generate_config.Cmd)
+	RootCmd.AddCommand(connect.Cmd)
+	RootCmd.AddCommand(connect_custom.Cmd)
+	RootCmd.AddCommand(disconnect.Cmd)
 	RootCmd.AddCommand(status.Cmd)
 	RootCmd.AddCommand(trace.Cmd)
 }
@@ -64,4 +74,6 @@ func initConfigDefaults() {
 	viper.SetDefault(config.AccessToken, "")
 	viper.SetDefault(config.PrivateKey, "")
 	viper.SetDefault(config.LicenseKey, "")
+	viper.SetDefault(config.Mode, "consumer")
+	viper.SetDefault(config.TeamName, "")
 }

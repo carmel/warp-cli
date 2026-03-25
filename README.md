@@ -9,16 +9,25 @@
 
 ## Features
 
-- Register new account
+- Register new account (Consumer WARP)
+- **Register with Zero Trust organization**
 - Change license key to use existing Warp+ subscription
-- Generate WireGuard profile
+- Generate WireGuard profile (for Cloudflare WARP)
+- **Generate custom WireGuard config files** (new!)
+- **Connect to VPN directly** (supports Consumer, Zero Trust, and Custom servers)
+- **Connect to custom WireGuard servers**
+- **Disconnect from VPN**
 - Check account status
 - Print trace information to debug Warp/Warp+ status
 
 ## Build
 
 ```sh
+# Build warp-cli
 go build -ldflags="-w -s" -trimpath -o warp-cli .
+
+# Build wireguard-go (required for connect command)
+cd wireguard && make && cd ..
 ```
 
 ## Download
@@ -27,27 +36,73 @@ You can find pre-compiled binaries on the [releases page](https://github.com/car
 
 ## Usage
 
+📚 **完整文档索引：[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)**
+
 Run `warp-cli` in a terminal without any arguments to display the help screen. All commands and parameters are documented.
 
 ### Register new account
 
-Run the following command in a terminal:
-
+**Consumer WARP (Personal VPN):**
 ```bash
 warp-cli register
 ```
 
-The new account will be saved under `warp-cli-account.toml`
+**Zero Trust (Enterprise):**
+```bash
+# Method 1: Using token URL
+warp-cli register-team --token "https://myteam.cloudflareaccess.com/auth?token=xxx"
 
-### Generate WireGuard profile
+# Method 2: Using service token (for automation)
+warp-cli register-team --team mycompany --client-id xxx --client-secret yyy
+```
 
-Run the following command in a terminal:
+For detailed Zero Trust setup, see [ZERO_TRUST_QUICK_START.md](ZERO_TRUST_QUICK_START.md).
 
+The account will be saved under `warp-cli-account.toml`
+
+### Connect to VPN (Recommended)
+
+**Cloudflare WARP (Consumer or Zero Trust):**
+```bash
+warp-cli connect
+```
+
+**Custom WireGuard Server:**
+```bash
+warp-cli connect-custom --config my-server.conf
+```
+
+This will automatically generate the profile (for Cloudflare), start wireguard-go, and establish the VPN connection.
+
+To disconnect:
+
+```bash
+warp-cli disconnect
+```
+
+For more details, see:
+- Cloudflare WARP: [CONNECT_GUIDE.md](CONNECT_GUIDE.md)
+- Custom WireGuard: [CUSTOM_WIREGUARD_SUPPORT.md](CUSTOM_WIREGUARD_SUPPORT.md)
+
+### Generate WireGuard profile (Manual Method)
+
+**For Cloudflare WARP:**
 ```bash
 warp-cli generate
 ```
 
-The WireGuard profile will be saved under `warp-cli-profile.conf`. For more information on how to use it, please check the official [WireGuard Quick Start](https://www.wireguard.com/quickstart/).
+**For custom WireGuard servers:**
+```bash
+# Generate a template
+warp-cli generate-config --template -o my-server.conf
+
+# Or use interactive mode
+warp-cli generate-config --interactive -o my-server.conf
+```
+
+The WireGuard profile will be saved to the specified file. For more information:
+- Cloudflare WARP: [WireGuard Quick Start](https://www.wireguard.com/quickstart/)
+- Custom servers: [GENERATE_CONFIG_GUIDE.md](GENERATE_CONFIG_GUIDE.md)
 
 #### Maximum transmission unit (MTU)
 
@@ -60,7 +115,9 @@ If you have an existing Warp+ subscription, for example on your phone, you can b
 > [!CAUTION]
 > Only subscriptions purchased directly from the official 1.1.1.1 app are supported. Keys obtained by any other means, including referrals, will not work and will not be supported.
 
-First, get your Warp+ account license key. To view it on Android:
+**For detailed instructions on how to get your license key, see [LICENSE_KEY_GUIDE.md](LICENSE_KEY_GUIDE.md).**
+
+Quick guide - To view your license key on Android:
 
 1. Open the `1.1.1.1` app
 2. Click on the hamburger menu button in the top-right corner

@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -58,4 +60,31 @@ func RunCommandFatal(cmd func() error) {
 			log.Fatalf("%+v\n", err)
 		}
 	}
+}
+
+func CopyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", src, err)
+	}
+	defer sourceFile.Close()
+
+	// 创建目标文件（如果已存在会覆盖）
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %w", dst, err)
+	}
+	defer destFile.Close()
+
+	// 高效复制内容
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return fmt.Errorf("failed to copy: %w", err)
+	}
+
+	// 同步到磁盘（可选，但推荐）
+	if err := destFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync file: %w", err)
+	}
+
+	return nil
 }
